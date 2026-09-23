@@ -90,3 +90,6 @@ export VA_TELEMETRY_API_KEY=vak_...
 Kiosk internetsizken veriyi yerel kuyrukta biriktirir, bağlantı gelince
 gönderir; aynı oturumun iki kez sayılması sunucu tarafında engellenir.
 Kontrat ayrıntısı: [`docs/ingest-contract.md`](docs/ingest-contract.md)
+
+<img width="1280" height="574" alt="1789573284268" src="https://github.com/user-attachments/assets/fcb909ff-6cef-4585-8900-5f529a8285e8" />
+<img width="1280" height="468" alt="1789573284459" src="https://github.com/user-attachments/assets/c9f1ee3e-bd23-4d8f-b5c8-e07cd5d1c8d7" />
