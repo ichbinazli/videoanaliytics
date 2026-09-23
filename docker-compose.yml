@@ -1,0 +1,49 @@
+# Sadece geliştirme ortamı içindir. Prod'da yönetilen bir MySQL kullanılır.
+#
+#   docker compose up -d
+#   Adminer: http://localhost:8080  (sunucu: mysql, kullanıcı: va, şifre: va)
+#
+# Port 3307 bilinçli seçildi: makinede zaten 3306'da bir MySQL çalışıyor olabilir.
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: octo-va-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Ham oturum tablosuna toplu insert'ler için; varsayılan 16M yetersiz kalabiliyor.
+      - --max-allowed-packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: video_analytics
+      MYSQL_USER: va
+      MYSQL_PASSWORD: va
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Sadece konteyner İLK kez oluşturulurken çalışır (boş data dizininde).
+      # Değiştirdiyseniz: docker compose down -v && docker compose up -d
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uva", "-pva"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  adminer:
+    image: adminer:5
+    container_name: octo-va-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

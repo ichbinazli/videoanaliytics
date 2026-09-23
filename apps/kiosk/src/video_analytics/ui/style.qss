@@ -1,0 +1,167 @@
+QWidget {
+    font-family: 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+    color: #F0F0F5;
+}
+
+QMainWindow {
+    background-color: #0F111A;
+}
+
+#combo_panel {
+    background-color: rgba(25, 28, 40, 0.7);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+    padding: 20px;
+}
+
+QLabel#combo_title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+QLabel#combo_total {
+    font-size: 22px;
+    font-weight: 600;
+    color: #00E5FF;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+QWidget#combo_item_card {
+    background-color: rgba(40, 44, 60, 0.8);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+QWidget#combo_item_card:hover {
+    background-color: rgba(50, 55, 75, 0.9);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+QLabel#item_name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+QLabel#item_price {
+    font-size: 14px;
+    color: #A0A5B5;
+}
+
+QPushButton#remove_btn {
+    background-color: rgba(255, 65, 85, 0.15);
+    color: #FF4155;
+    border: 1px solid rgba(255, 65, 85, 0.3);
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 5px 15px;
+}
+
+QPushButton#remove_btn:hover {
+    background-color: #FF4155;
+    color: #FFFFFF;
+}
+
+QPushButton#clear_all_btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #D0D0D0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QPushButton#clear_all_btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+}
+
+QPushButton#checkout_btn {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00D2FF, stop:1 #3A7BD5);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 15px;
+    padding: 18px;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 1px;
+}
+
+QPushButton#checkout_btn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #19D9FF, stop:1 #4A8BE5);
+}
+
+QPushButton#checkout_btn:pressed {
+    background: #3A7BD5;
+}
+
+#idle_widget {
+    background-color: #000000;
+}
+
+QLabel#idle_text {
+    font-size: 60px;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: 4px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+QLabel#idle_subtext {
+    font-size: 24px;
+    color: #00E5FF;
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+#bottomPanel {
+    background-color: rgba(20, 22, 32, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+}
+
+QPushButton[class="categoryBtn"] {
+    background-color: transparent;
+    color: #8A8F9E;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px 20px;
+    margin-right: 10px;
+    border-bottom: 3px solid transparent;
+}
+
+QPushButton[class="categoryBtn"]:hover {
+    color: #FFFFFF;
+}
+
+QPushButton[class="categoryBtn"]:checked {
+    color: #00E5FF;
+    border-bottom: 3px solid #00E5FF;
+}
+
+QPushButton[class="productCard"] {
+    background-color: rgba(40, 44, 60, 0.5);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+QPushButton[class="productCard"]:hover {
+    background-color: rgba(60, 65, 85, 0.8);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+QPushButton[class="productCard"]:checked {
+    background-color: rgba(0, 229, 255, 0.15);
+    border: 2px solid #00E5FF;
+}

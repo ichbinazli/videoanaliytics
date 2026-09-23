@@ -1,0 +1,397 @@
+// Octopus Video Analytics — veri modeli
+//
+// Hiyerarşi: Tenant (müşteri) -> Site (mağaza) -> Device (ekran) -> ViewerSession (oturum)
+//
+// İki kural bu şemanın her yerinde geçerlidir:
+//  1. Tenant'a ait her tabloda `tenantId` DENORMALIZE tutulur. Sebebi yalnızca
+//     performans değil güvenlik: tek bir Prisma extension'ı her sorguya mekanik
+//     olarak `where.tenantId` enjekte edebilsin diye (bkz. src/infra/prisma.ts).
+//  2. Ham oturumlar asla toplu sayaç artırmaz. Rollup tabloları ham satırlardan
+//     YENİDEN HESAPLANIR; böylece cihaz retry'ları raporlara sızamaz.
+//
+// Datasource URL'i bilinçli olarak burada değil prisma.config.ts içindedir (Prisma 7).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ---------------------------------------------------------------------------
+// Enum'lar
+//
+// Kiosk'tan gelen ham etiketler (DeepFace'in "Man"/"happy" değerleri, Türkçe yaş
+// kovaları) DB'ye ASLA girmez. Çeviri iki yerde yaşar: ingest.mapper.ts (giriş)
+// ve panel/lib/format.ts (gösterim).
+// ---------------------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN // Octopus personeli — tenant'a bağlı değil
+  TENANT_ADMIN // Müşteri yöneticisi — kendi tenant'ında tam yetki
+  TENANT_VIEWER // Müşteri kullanıcısı — sadece okuma
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum AgeBucket {
+  CHILD // < 12
+  YOUTH // 12–24
+  ADULT // 25–44
+  MIDDLE_AGED // 45–59
+  SENIOR // >= 60
+  UNKNOWN
+}
+
+enum Emotion {
+  ANGRY
+  DISGUST
+  FEAR
+  HAPPY
+  SAD
+  SURPRISE
+  NEUTRAL
+  UNKNOWN
+}
+
+enum DeviceStatus {
+  ACTIVE
+  INACTIVE
+  DECOMMISSIONED
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum LicenseStatus {
+  ACTIVE     // Lisans aktif, sistem kullanılabilir
+  SUSPENDED  // Geçici askıya alınmış (ödeme gecikmesi vb.)
+  CANCELLED  // Kalıcı iptal
+}
+
+// ---------------------------------------------------------------------------
+// Kimlik & hiyerarşi
+// ---------------------------------------------------------------------------
+
+model Tenant {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(120)
+  slug     String  @unique @db.VarChar(60)
+  /// Günlük agregasyonların hangi yerel güne düşeceğini belirler.
+  timezone String  @default("Europe/Istanbul") @db.VarChar(64)
+  isActive Boolean @default(true)
+
+  /// Ham oturumların saklanma süresi; null ise ortam varsayılanı kullanılır.
+  rawRetentionDays Int? @db.SmallInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  sites   Site[]
+  devices Device[]
+  license License?
+
+  @@map("tenants")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  /// NULL == SUPER_ADMIN. Platform seviyesindeki kullanıcı hiçbir tenant'a ait değildir.
+  tenantId Int?
+
+  email        String  @unique @db.VarChar(190)
+  passwordHash String  @db.VarChar(255) // argon2id
+  fullName     String  @db.VarChar(120)
+  role         Role    @default(TENANT_VIEWER)
+  isActive     Boolean @default(true)
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId, isActive])
+  @@map("users")
+}
+
+model RefreshToken {
+  id     Int @id @default(autoincrement())
+  userId Int
+
+  /// Rotasyon ailesi. Zaten kullanılmış bir token tekrar sunulursa ailenin
+  /// tamamı iptal edilir (reuse detection).
+  familyId String @db.Char(36)
+
+  /// Opak token'ın sha256'sı — token'ın kendisi hiçbir zaman saklanmaz.
+  tokenHash String @unique @db.Char(64)
+
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Site {
+  id       Int    @id @default(autoincrement())
+  tenantId Int
+  name     String @db.VarChar(120)
+  /// Müşterinin kendi mağaza kodu. Tenant içinde tekil.
+  code     String @db.VarChar(40)
+
+  city      String?  @db.VarChar(80)
+  address   String?  @db.VarChar(255)
+  latitude  Decimal? @db.Decimal(9, 6)
+  longitude Decimal? @db.Decimal(9, 6)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  devices Device[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("sites")
+}
+
+model Device {
+  id       Int @id @default(autoincrement())
+  tenantId Int
+  siteId   Int
+
+  name String @db.VarChar(120)
+  /// Kiosk'un üstüne yazılan insan-okur kimlik. Tenant içinde tekil.
+  code String @db.VarChar(40)
+
+  status      DeviceStatus @default(ACTIVE)
+  screenLabel String?      @db.VarChar(120)
+
+  /// Heartbeat / ingest ile güncellenir; panel online-offline'ı buradan hesaplar.
+  appVersion     String?   @db.VarChar(32)
+  lastSeenAt     DateTime?
+  lastIngestAt   DateTime?
+  /// Cihazın son bildirdiği kuyruk derinliği — teşhis için.
+  lastSpoolDepth Int?      @db.SmallInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id])
+  site    Site           @relation(fields: [siteId], references: [id])
+  apiKeys DeviceApiKey[]
+
+  @@unique([tenantId, code])
+  @@index([siteId, status])
+  @@index([tenantId, lastSeenAt])
+  @@map("devices")
+}
+
+model DeviceApiKey {
+  id       Int @id @default(autoincrement())
+  tenantId Int
+  deviceId Int
+
+  /// Key'in düz metin ön eki — sadece hangi kaydın aranacağını bulmak için.
+  keyPrefix String @unique @db.Char(12)
+
+  /// HMAC-SHA256(secret, API_KEY_PEPPER). argon2 DEĞİL: secret zaten 256 bit
+  /// CSPRNG entropisi taşıyor, yavaş KDF hiçbir şey kazandırmaz ama her ingest
+  /// isteğine 50-100 ms ekler. Kullanıcı ŞİFRELERİ argon2id kullanır.
+  keyHash String @db.Char(64)
+
+  label  String?      @db.VarChar(80)
+  status ApiKeyStatus @default(ACTIVE)
+
+  /// Rotasyonda eski key'e yazılır: bu tarihe kadar hâlâ kabul edilir.
+  expiresAt  DateTime?
+  /// Dakikada en fazla bir kez yazılır (debounce) — auth bir okuma işlemi kalsın.
+  lastUsedAt DateTime?
+
+  createdById Int?
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, status])
+  @@map("device_api_keys")
+}
+
+model License {
+  id       Int     @id @default(autoincrement())
+  tenantId Int     @unique  // Her müşterinin TEK bir lisansı olur
+
+  status     LicenseStatus @default(ACTIVE)
+  /// Lisans planı: "starter", "pro", "enterprise"
+  plan       String        @db.VarChar(40)
+  /// Bu lisansın izin verdiği maksimum cihaz sayısı
+  maxDevices Int           @default(5)
+
+  startsAt  DateTime
+  expiresAt DateTime?   // null = süresiz
+
+  suspendedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?   @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("licenses")
+}
+
+// ---------------------------------------------------------------------------
+// Ham olaylar
+// ---------------------------------------------------------------------------
+
+model ViewerSession {
+  id BigInt @id @default(autoincrement())
+
+  /// Kiosk üretir ve retry'lar boyunca değiştirmez. (deviceId, sessionUuid)
+  /// tekilliği sayesinde tekrar gönderilen batch sıfır satır ekler.
+  /// Dışarıya açılan kimlik de budur — BigInt id JSON'a kötü serialize oluyor.
+  sessionUuid String @db.Char(36)
+
+  tenantId Int
+  /// Denormalize: site sorgularından join'i kaldırır ve semantik olarak daha
+  /// doğrudur — cihaz başka mağazaya taşınsa bile geçmiş oturum kaydedildiği
+  /// mağazada kalmalı.
+  siteId   Int
+  deviceId Int
+
+  /// Cihaz saati (UTC). receivedAt ile birlikte saat kaymasını görünür kılar.
+  startedAt DateTime @db.DateTime(3)
+  endedAt   DateTime @db.DateTime(3)
+
+  durationSec    Int     @db.SmallInt
+  /// Ekran önünden geçen kişi sayısı (gösterim).
+  personsPassed  Int     @default(0) @db.SmallInt
+  /// Ekrana bakan kişi sayısı (izleyici).
+  personsLooked  Int     @default(0) @db.SmallInt
+  /// Toplam dikkat süresi.
+  lookingSeconds Decimal @default(0) @db.Decimal(8, 1)
+
+  /// Ham sayısal tahmin. Saklanır ki müşteri farklı yaş bantları isterse
+  /// geçmiş veri yeniden kovalanabilsin.
+  ageEstimate Int?      @db.SmallInt
+  /// ageEstimate'ten SUNUCUDA türetilir; GROUP BY'ı index taramasına çevirir.
+  ageBucket   AgeBucket @default(UNKNOWN)
+
+  gender  Gender  @default(UNKNOWN)
+  emotion Emotion @default(UNKNOWN)
+
+  appVersion String?  @db.VarChar(32)
+  /// Sunucu saati.
+  receivedAt DateTime @default(now()) @db.DateTime(3)
+
+  @@unique([deviceId, sessionUuid])
+  @@index([tenantId, startedAt])
+  @@index([deviceId, startedAt])
+  @@index([siteId, startedAt])
+  @@map("viewer_sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Agregasyonlar
+//
+// Ingest bu tabloları YAZMAZ; sadece RollupDirtyBucket'a işaret bırakır.
+// Worker o kovaları ham satırlardan yeniden hesaplayıp upsert eder. Bu yüzden
+// job istenildiği kadar çalıştırılabilir ve geriye dönük düzeltme yapılabilir.
+// ---------------------------------------------------------------------------
+
+model SessionRollupHourly {
+  id       BigInt @id @default(autoincrement())
+  tenantId Int
+  siteId   Int
+  deviceId Int
+
+  /// UTC saat tabanı.
+  bucketStart DateTime @db.DateTime(0)
+
+  sessionCount   Int     @default(0)
+  personsPassed  Int     @default(0)
+  personsLooked  Int     @default(0)
+  lookingSeconds Decimal @default(0) @db.Decimal(12, 1)
+  durationSecSum Int     @default(0)
+
+  /// Ortalama yaş = ageSum / ageCount. Ortalamayı saklamıyoruz ki kovalar
+  /// birleştirilebilsin (ortalamaların ortalaması yanlış olurdu).
+  ageSum   Int @default(0)
+  ageCount Int @default(0)
+
+  emAngry    Int @default(0)
+  emDisgust  Int @default(0)
+  emFear     Int @default(0)
+  emHappy    Int @default(0)
+  emSad      Int @default(0)
+  emSurprise Int @default(0)
+  emNeutral  Int @default(0)
+  emUnknown  Int @default(0)
+
+  computedAt DateTime @updatedAt
+
+  @@unique([deviceId, bucketStart])
+  @@index([tenantId, bucketStart])
+  @@index([siteId, bucketStart])
+  @@map("session_rollup_hourly")
+}
+
+model DemographicRollupDaily {
+  id       BigInt @id @default(autoincrement())
+  tenantId Int
+  siteId   Int
+  deviceId Int
+
+  /// Tenant'ın YEREL gece yarısının UTC karşılığı.
+  bucketStart DateTime @db.DateTime(0)
+
+  gender    Gender
+  ageBucket AgeBucket
+
+  sessionCount   Int     @default(0)
+  personsLooked  Int     @default(0)
+  lookingSeconds Decimal @default(0) @db.Decimal(12, 1)
+
+  computedAt DateTime @updatedAt
+
+  @@unique([deviceId, bucketStart, gender, ageBucket])
+  @@index([tenantId, bucketStart])
+  @@map("demographic_rollup_daily")
+}
+
+/// Yeniden hesaplanması gereken saat kovaları. Bu tablo sayesinde gecikme
+/// sınırsız tolere edilir: 3 gün offline kalmış cihaz kuyruğunu boşaltır,
+/// ingest 72 kova işaretler, worker tam o 72'yi hesaplar. Kırılgan bir
+/// "son N saat" penceresine gerek kalmaz.
+model RollupDirtyBucket {
+  id       BigInt @id @default(autoincrement())
+  deviceId Int
+
+  /// UTC saat tabanı.
+  bucketStart DateTime @db.DateTime(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([deviceId, bucketStart])
+  @@map("rollup_dirty_buckets")
+}

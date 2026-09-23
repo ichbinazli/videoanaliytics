@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Tek bir tasarım dili: bütün renkler burada tanımlı token'lardan gelir.
+ * Bileşenlerde ham hex kullanılmaz — tema değiştirmek tek dosyalık iş olsun.
+ */
+@theme {
+  --color-ink: #0a1628;
+  --color-ink-soft: #23303f;
+  --color-muted: #5b6472;
+  --color-line: #e9ecf1;
+  --color-surface: #ffffff;
+  --color-canvas: #f6f7f9;
+  --color-chip: #f4f6f8;
+
+  --color-accent: #00c853;
+  --color-accent-soft: #e6f7ed;
+
+  --color-danger: #d93025;
+  --color-danger-soft: #fdecea;
+
+  /* Grafik serileri — sırayla kullanılır, kontrast gözetilerek seçildi. */
+  --color-series-1: #0a1628;
+  --color-series-2: #00c853;
+  --color-series-3: #3b82f6;
+  --color-series-4: #f59e0b;
+  --color-series-5: #8b5cf6;
+  --color-series-6: #ec4899;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Klavye kullanıcıları için görünür odak halkası. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

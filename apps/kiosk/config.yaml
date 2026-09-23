@@ -1,0 +1,56 @@
+# ──────────────────────────────────────────────────────────
+#  Video Analytics — config.yaml
+# ──────────────────────────────────────────────────────────
+#  Bu dosya yalnızca ortama özel override'lar içerir.
+#  Tüm varsayılan değerler core/config_loader.py dataclass'larındadır.
+#  Bir anahtarı yorum satırından çıkararak aktif edebilirsiniz.
+# ──────────────────────────────────────────────────────────
+
+# camera:
+#   device_id: 1              # ⚠ Kamera indeksi — makinenize göre ayarlayın (varsayılan: 0)
+#   width: 1920               # Çözünürlük genişliği (varsayılan: 1280)
+#   height: 1080              # Çözünürlük yüksekliği (varsayılan: 720)
+#   flip_horizontal: true     # Ayna modu (varsayılan: true)
+
+# person_detection:
+#   min_person_area: 15000    # Kişi algılama minimum alan (varsayılan: 20000)
+#   yolo_confidence: 0.5      # YOLO güven eşiği (varsayılan: 0.4)
+
+# pose_estimation:
+#   estimated_torso_ratio: 1.40  # Gövde oranı tahmini (varsayılan: 1.35)
+
+# demographics:
+#   analysis_interval_seconds: 3.0  # Analiz aralığı, saniye (varsayılan: 2.0)
+
+# privacy:
+#   enable_demographics: false  # Varsayılan: kapalı
+#   store_raw: false            # Cinsiyet/duygu saklama
+#   retention_days: 30          # Analytics saklama süresi
+#   notice: "Bu kiosk anonim kullanım metrikleri işler."
+
+# kiosk:
+#   fullscreen: true          # Tam ekran modu (varsayılan: false)
+
+# ──────────────────────────────────────────────────────────
+#  Telemetri — merkezi veri toplama API'si
+# ──────────────────────────────────────────────────────────
+#  API KEY BU DOSYAYA YAZILMAZ. Bu dosya git'te tutuluyor.
+#  Aşağıdaki `api_key_env`, key'i taşıyan ORTAM DEĞİŞKENİNİN ADIdır:
+#
+#      export VA_TELEMETRY_API_KEY=vak_...   (panelden cihaz key'i üretin)
+#
+#  `enabled: false` iken kiosk eskisi gibi yalnızca yerel SQLite'a yazar;
+#  ağ ile hiçbir teması olmaz.
+# ──────────────────────────────────────────────────────────
+
+# telemetry:
+#   enabled: true
+#   base_url: "http://localhost:4000"   # Prod: https://analytics.octopus.tv
+#   api_key_env: "VA_TELEMETRY_API_KEY" # Değişkenin ADI (varsayılan)
+#   spool_path: "telemetry/spool.db"    # Çevrimdışı kuyruk (varsayılan)
+#   batch_size: 50                      # Tek istekte gönderilecek oturum (varsayılan: 50)
+#   flush_interval_seconds: 30.0        # Gönderim aralığı (varsayılan: 30)
+#   timeout_seconds: 5.0                # HTTP zaman aşımı (varsayılan: 5)
+#   max_queue_rows: 50000               # Kuyruk tavanı; aşılırsa en eskiler düşer
+#   max_backoff_seconds: 300.0          # Hata sonrası en uzun bekleme (varsayılan: 300)
+#   verify_tls: true                    # Yalnızca kurum içi self-signed için false

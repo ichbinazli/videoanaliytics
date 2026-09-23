@@ -1,0 +1,54 @@
+# Virtual Environments (Sanal Ortamlar)
+venv/
+env/
+.env/
+Scripts/
+Lib/
+Include/
+pyvenv.cfg
+
+# Python & Önbellek Dosyaları
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Setuptools & Paketleme Çıktıları
+*.egg-info/
+build/
+dist/
+
+# Log Dosyaları
+logs/
+*.log
+
+# AI/ML Modelleri & Ağır Dosyalar
+*.pt
+*.task
+*.xml
+models/
+src/assets/*.xml
+
+# Veritabanı Dosyaları
+*.sqlite3
+*.db
+catalog/*.db
+
+# IDE & Editor Ayarları
+.vscode/
+.idea/
+.cursor/
+
+# İşletim Sistemi Önbellekleri
+.DS_Store
+Thumbs.db
+
+# Telemetri çevrimdışı kuyruğu (operasyonel durum, silinebilir)
+telemetry/
+
+# dev'den gelen eklemeler
+.venv/
+
+# Python Sanal Ortam
+test_venv/

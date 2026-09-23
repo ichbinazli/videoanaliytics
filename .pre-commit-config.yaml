@@ -1,0 +1,17 @@
+# pre-commit repo KÖKÜNDEN çalışan bir araçtır; monorepo'ya geçerken
+# apps/kiosk'a taşımak onu görünmez kılardı. Bunun yerine kökte kalıyor
+# ve `files:` ile yalnızca Python uygulamasına kapsanıyor —
+# apps/api ve apps/panel kendi lint zincirlerini (eslint/tsc) kullanıyor.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^apps/kiosk/
+
+  - repo: https://github.com/psf/black
+    rev: 26.5.1
+    hooks:
+      - id: black
+        files: ^apps/kiosk/

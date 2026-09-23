@@ -1,0 +1,4 @@
+black>=26.5.1
+ruff==0.15.14
+mypy>=1.10.0
+pre-commit>=3.7.0

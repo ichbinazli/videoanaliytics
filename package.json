@@ -1,0 +1,25 @@
+{
+  "name": "octo-video-analytics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Octopus Video Analytics — kiosk, veri toplama API'si ve müşteri paneli",
+  "workspaces": [
+    "apps/api",
+    "apps/panel"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "npm -w @octo-va/api run dev",
+    "dev:panel": "npm -w @octo-va/panel run dev",
+    "build": "npm -w @octo-va/api run build && npm -w @octo-va/panel run build",
+    "lint": "npm -w @octo-va/api run lint && npm -w @octo-va/panel run lint",
+    "typecheck": "npm -w @octo-va/api run typecheck && npm -w @octo-va/panel run typecheck",
+    "test": "npm -w @octo-va/api run test",
+    "test:kiosk": "cd apps/kiosk && PYTHONPATH=src python3 -m pytest -q",
+    "db:migrate": "npm -w @octo-va/api run db:migrate",
+    "db:seed": "npm -w @octo-va/api run db:seed",
+    "db:studio": "npm -w @octo-va/api run db:studio"
+  }
+}

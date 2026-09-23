@@ -1,0 +1,61 @@
+# Bu dosya monorepo KÖKÜ içindir.
+# Kiosk'a (Python) özel kurallar apps/kiosk/.gitignore içinde yaşar.
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Derleme çıktıları
+dist/
+build/
+*.tsbuildinfo
+
+# Ortam dosyaları — .env.example HARİÇ, o commit'lenir
+.env
+.env.*
+!.env.example
+
+# Prisma
+apps/api/prisma/*.db
+apps/api/prisma/generated/
+
+# Test & kapsam
+coverage/
+.pytest_cache/
+.nyc_output/
+
+# Loglar
+logs/
+*.log
+
+# IDE & editör
+.vscode/
+.idea/
+.cursor/
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+
+# Python ve Sanal Ortamlar
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+test_venv/
+env/
+.env/
+
+# Büyük Model Dosyaları
+*.pt
+*.task
+
+# Gereksiz dosyalar
+s -ExecutionPolicy*

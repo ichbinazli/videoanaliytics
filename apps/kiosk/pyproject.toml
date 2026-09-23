@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-analytics"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "opencv-python==4.9.0.80",
+    "numpy==1.26.4",
+    "mediapipe==0.10.35",
+    "ultralytics==8.4.95",
+    "PyYAML==6.0.3",
+    "PyQt6==6.11.0",
+    "deepface==0.0.100",
+    "tf-keras==2.21.0",
+]
+
+[project.scripts]
+video-analytics = "video_analytics.main:main"
+video-analytics-watchdog = "video_analytics.watchdog:run_watchdog"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["**/*.qss", "**/*.png", "**/*.db", "**/*.yaml", "**/*.json"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E402"]  # Modül seviyesinde import sırası (TF env vars nedeniyle)
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+explicit_package_bases = true
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

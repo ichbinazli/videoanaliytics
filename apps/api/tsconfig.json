@@ -1,0 +1,33 @@
+{
+  // NOT: Bilinçli olarak path alias (@/...) kullanmıyoruz. tsc çıktısında
+  // alias'lar yeniden yazılmaz, bu yüzden `node dist/server.js` için ayrıca bir
+  // resolver gerekirdi. Göreli import'lar hem derlemede hem çalışma zamanında
+  // ek araç istemeden çalışır.
+  //
+  // module=nodenext olduğu için göreli import'lar `.js` uzantısıyla yazılır
+  // (kaynak .ts olsa bile) — ESM'in kuralı budur.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": false,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
